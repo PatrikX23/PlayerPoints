@@ -11,6 +11,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.black_ixx.playerpoints.manager.ConfigurationManager.Setting;
 import org.black_ixx.playerpoints.models.SortedPlayer;
 
 public class DataManager extends AbstractDataManager {
@@ -26,7 +27,7 @@ public class DataManager extends AbstractDataManager {
         return CompletableFuture.supplyAsync(() -> {
             AtomicInteger value = new AtomicInteger();
             this.databaseConnector.connect(connection -> {
-                String query = "SELECT points FROM " + this.getTablePrefix() + "points WHERE uuid = ?";
+                String query = "SELECT points FROM " + this.getTableName("points") + " WHERE " + this.getUUIDColumnName() + " = ?";
                 try (PreparedStatement statement = connection.prepareStatement(query)) {
                     statement.setString(1, playerId.toString());
                     ResultSet result = statement.executeQuery();
@@ -49,7 +50,7 @@ public class DataManager extends AbstractDataManager {
         return CompletableFuture.supplyAsync(() -> {
             this.databaseConnector.connect(connection -> {
                 if (this.playerEntryExists(playerId).join()) {
-                    String query = "UPDATE " + this.getTablePrefix() + "points SET points = ? WHERE uuid = ?";
+                    String query = "UPDATE " + this.getTableName("points") + " SET points = ? WHERE " + this.getUUIDColumnName() + " = ?";
                     try (PreparedStatement statement = connection.prepareStatement(query)) {
                         statement.setInt(1, amount);
                         statement.setString(2, playerId.toString());
@@ -68,7 +69,7 @@ public class DataManager extends AbstractDataManager {
         return CompletableFuture.supplyAsync(() -> {
             AtomicBoolean value = new AtomicBoolean();
             this.databaseConnector.connect(connection -> {
-                String query = "SELECT 1 FROM " + this.getTablePrefix() + "points WHERE uuid = ?";
+                String query = "SELECT 1 FROM " + this.getTableName("points") + " WHERE " + this.getUUIDColumnName() + " = ?";
                 try (PreparedStatement statement = connection.prepareStatement(query)) {
                     statement.setString(1, playerId.toString());
                     value.set(statement.executeQuery().next());
@@ -82,7 +83,7 @@ public class DataManager extends AbstractDataManager {
         return CompletableFuture.supplyAsync(() -> {
             SortedSet<SortedPlayer> players = new TreeSet<>();
             this.databaseConnector.connect(connection -> {
-                String query = "SELECT uuid, points FROM " + this.getTablePrefix() + "points";
+                String query = "SELECT " + this.getUUIDColumnName() + ", points FROM " + this.getTableName("points");
                 try (Statement statement = connection.createStatement()) {
                     ResultSet result = statement.executeQuery(query);
                     while (result.next()) {
@@ -105,7 +106,7 @@ public class DataManager extends AbstractDataManager {
                     this.pointsCacheManager.reset();
                 }
 
-                String batchInsert = "INSERT INTO " + this.getTablePrefix() + "points (uuid, points) VALUES (?, ?)";
+                String batchInsert = "INSERT INTO " + this.getTableName("points") + " (" + this.getUUIDColumnName() + ", points) VALUES (?, ?)";
                 try (PreparedStatement statement = connection.prepareStatement(batchInsert)) {
                     for (SortedPlayer playerData : data) {
                         statement.setString(1, playerData.getUniqueId().toString());
@@ -121,7 +122,7 @@ public class DataManager extends AbstractDataManager {
 
     private void createEntry(UUID playerId, int value) {
         this.databaseConnector.connect(connection -> {
-            String insert = "INSERT INTO " + this.getTablePrefix() + "points (uuid, points) VALUES (?, ?)";
+            String insert = "INSERT INTO " + this.getTableName("points") + " (" + this.getUUIDColumnName() + ", points) VALUES (?, ?)";
             try (PreparedStatement statement = connection.prepareStatement(insert)) {
                 statement.setString(1, playerId.toString());
                 statement.setInt(2, value);
@@ -129,6 +130,22 @@ public class DataManager extends AbstractDataManager {
                 this.pointsCacheManager.updatePoints(playerId, 0);
             }
         });
+    }
+
+    private String getTableName(String table) {
+        if (Setting.LEGACY_DATABASE_MODE.getBoolean()) {
+            return "playerpoints";
+        } else {
+            return this.getTablePrefix() + table;
+        }
+    }
+
+    private String getUUIDColumnName() {
+        if (Setting.LEGACY_DATABASE_MODE.getBoolean()) {
+            return "playername";
+        } else {
+            return "uuid";
+        }
     }
 
 }

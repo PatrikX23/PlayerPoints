@@ -14,7 +14,8 @@ public class ConfigurationManager extends AbstractConfigurationManager {
         VOTE("vote", null, "Votifier hook settings"),
         VOTE_ENABLED("vote.enabled", false, "If the votifier hook should be enabled"),
         VOTE_AMOUNT("vote.amount", 100, "How many points should be awarded per vote"),
-        VOTE_ONLINE("vote.online", false, "Should points only be awarded when the player who voted is online?");
+        VOTE_ONLINE("vote.online", false, "Should points only be awarded when the player who voted is online?"),
+        LEGACY_DATABASE_MODE("legacy-database-mode", false, "Should data be loaded from the old database format?", "You should probably keep this disabled unless you really need it");
 
         private final String key;
         private final Object defaultValue;

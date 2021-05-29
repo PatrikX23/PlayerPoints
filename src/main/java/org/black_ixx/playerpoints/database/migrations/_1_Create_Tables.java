@@ -32,25 +32,29 @@ public class _1_Create_Tables extends DataMigration {
     public void migrate(DatabaseConnector connector, Connection connection, String tablePrefix) throws SQLException {
         String autoIncrement = connector instanceof MySQLConnector ? " AUTO_INCREMENT" : "";
 
-        String query;
-        if (connector instanceof SQLiteConnector) {
-            query = "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?";
-        } else {
-            query = "SHOW TABLES LIKE ?";
-        }
+//        String query;
+//        if (connector instanceof SQLiteConnector) {
+//            query = "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?";
+//        } else {
+//            query = "SHOW TABLES LIKE ?";
+//        }
 
-        // Check if table already exists, if it does then try renaming the old 'playername' column to 'uuid'
-        boolean exists;
-        try (PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setString(1, tablePrefix + "points");
-            exists = statement.executeQuery().next();
-        }
+        // Check if the old table exists, if it does then rename it to the new name and change the old 'playername' column to 'uuid'
+//        boolean exists;
+//        try (PreparedStatement statement = connection.prepareStatement(query)) {
+//            statement.setString(1, "playerpoints");
+//            exists = statement.executeQuery().next();
+//        }
 
-        if (exists) {
-            try (Statement statement = connection.createStatement()) {
-                statement.executeUpdate("ALTER TABLE " + tablePrefix + "points RENAME COLUMN playername TO uuid");
-            } catch (Exception ignored) { }
-        } else {
+//        if (exists) {
+//            try (Statement statement = connection.createStatement()) {
+//                statement.executeUpdate("ALTER TABLE playerpoints RENAME TO " + tablePrefix + "points");
+//            } catch (Exception ignored) { }
+//
+//            try (Statement statement = connection.createStatement()) {
+//                statement.executeUpdate("ALTER TABLE " + tablePrefix + "points RENAME COLUMN playername TO uuid");
+//            } catch (Exception ignored) { }
+//        } else {
             // Create points table
             try (Statement statement = connection.createStatement()) {
                 statement.executeUpdate("CREATE TABLE " + tablePrefix + "points (" +
@@ -60,34 +64,34 @@ public class _1_Create_Tables extends DataMigration {
                         "UNIQUE (uuid)" +
                         ")");
             }
-        }
+//        }
 
         // Attempt to import legacy data if it exists and we are using SQLite
         // First make sure there isn't already any data in the database for some reason
-        PlayerPoints plugin = PlayerPoints.getInstance();
-        DataManager dataManager = plugin.getManager(DataManager.class);
-        File file = new File(plugin.getDataFolder(), "storage.yml");
-        if (dataManager.getAllPoints().join().isEmpty() && file.exists() && connector instanceof SQLiteConnector) {
-            try {
-                FileConfiguration configuration = YamlConfiguration.loadConfiguration(file);
-                ConfigurationSection section = configuration.getConfigurationSection("Points");
-                if (section == null)
-                    section = configuration.getConfigurationSection("Players");
-
-                if (section == null) {
-                    plugin.getLogger().warning("Malformed storage.yml file.");
-                    return;
-                }
-
-                SortedSet<SortedPlayer> data = new TreeSet<>();
-                for (String uuid : section.getKeys(false))
-                    data.add(new SortedPlayer(UUID.fromString(uuid), section.getInt(uuid)));
-
-                plugin.getManager(DataManager.class).importData(data).thenRun(() -> plugin.getLogger().warning("Imported legacy data from storage.yml"));
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
+//        PlayerPoints plugin = PlayerPoints.getInstance();
+//        DataManager dataManager = plugin.getManager(DataManager.class);
+//        File file = new File(plugin.getDataFolder(), "storage.yml");
+//        if (dataManager.getAllPoints().join().isEmpty() && file.exists() && connector instanceof SQLiteConnector) {
+//            try {
+//                FileConfiguration configuration = YamlConfiguration.loadConfiguration(file);
+//                ConfigurationSection section = configuration.getConfigurationSection("Points");
+//                if (section == null)
+//                    section = configuration.getConfigurationSection("Players");
+//
+//                if (section == null) {
+//                    plugin.getLogger().warning("Malformed storage.yml file.");
+//                    return;
+//                }
+//
+//                SortedSet<SortedPlayer> data = new TreeSet<>();
+//                for (String uuid : section.getKeys(false))
+//                    data.add(new SortedPlayer(UUID.fromString(uuid), section.getInt(uuid)));
+//
+//                plugin.getManager(DataManager.class).importData(data).thenRun(() -> plugin.getLogger().warning("Imported legacy data from storage.yml"));
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
+//        }
     }
 
 }
